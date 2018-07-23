@@ -10,7 +10,10 @@ if (!global.URL.$$objects) {
 		global.URL.$$objects[id] = blob;
 		return `blob:http://localhost/${id}`;
 	};
+	global.URL.createObjectURL.jsdomWorker = true;
+}
 
+if (global.URL.createObjectURL.jsdomWorker && !(global.fetch && global.fetch.jsdomWorker)) {
 	let oldFetch = global.fetch || fetch;
 	global.fetch = function(url, opts) {
 		if (url.match(/^blob:/)) {
@@ -29,6 +32,7 @@ if (!global.URL.$$objects) {
 		}
 		return oldFetch.call(this, url, opts);
 	};
+	global.fetch.jsdomWorker = true;
 }
 
 if (!global.document) {
@@ -61,14 +65,27 @@ global.Worker = function Worker(url) {
 			importScripts(...urls) {}
 		},
 		getScopeVar;
-	inside.on('message', e => { let f = getScopeVar('onmessage'); if (f) f.call(scope, e); });
+	inside.on('message', e => {
+		let f = getScopeVar('onmessage');
+		if (f) {
+			f.call(scope, e);
+		}
+	});
 	this.addEventListener = outside.on;
 	this.removeEventListener = outside.off;
 	this.dispatchEvent = outside.emit;
-	outside.on('message', e => { this.onmessage && this.onmessage(e); });
+	outside.on('message', e => {
+		if (this.onmessage) {
+			this.onmessage(e);
+		}
+	});
 	this.postMessage = data => {
-		if (messageQueue!=null) messageQueue.push(data);
-		else inside.emit('message', { data });
+		if (messageQueue!=null) {
+			messageQueue.push(data);
+		}
+		else {
+			inside.emit('message', { data });
+		}
 	};
 	this.terminate = () => {
 		throw Error('Not Supported');
