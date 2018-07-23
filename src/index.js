@@ -66,7 +66,7 @@ global.Worker = function Worker(url) {
 		},
 		getScopeVar;
 	inside.on('message', e => {
-		let f = getScopeVar('onmessage');
+		let f = getScopeVar('self.onmessage') || getScopeVar('onmessage');
 		if (f) {
 			f.call(scope, e);
 		}
